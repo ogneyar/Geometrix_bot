@@ -1,4 +1,10 @@
 let fetch = require('node-fetch');
+var parseString = require('xml2js').parseString;
+// example xml2js
+var xml = "<root>Hello xml2js!</root>"
+parseString(xml, function (err, result) {
+    // console.log(result);
+});
 
 const url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?morphology=on&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&search-filter=Дате+размещения&searchString=оплаты+проезда"; // &ca=on 
 
@@ -47,7 +53,13 @@ async function ttt(url) {
 ttt(url).then((resolve, reject) => {
     if (resolve) {
 
-        console.log(resolve);
+        // console.log(resolve);
+        parseString(resolve, function (err, result) {
+            console.log(result.rss.channel[0].item[0].description[0]);
+            // parseString(result.rss.channel[0].item[0].description[0], function (err, res) {
+            //     console.log(res);
+            // });
+        });
 
     }else if (reject) {
         console.log("reject");
