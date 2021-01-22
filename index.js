@@ -18,6 +18,7 @@ let uri = `https://api.telegram.org/bot${BOT_TOKEN}/`;
 let getMe = `${uri}getMe`;
 let getUpdates = `${uri}getUpdates?offset=`;
 let update_id = 0;
+let chat_id;
 let text;
 let update;
 let result;
@@ -43,7 +44,6 @@ async function Get(url) {
             "Connection": "keep-alive"
         }
       });
-    // let text = response.text();
     return response.text();
 }
 
@@ -72,12 +72,19 @@ function Bot() {
                     update_id = result[i].update_id;
                     message = result[i].message;
                     text = message.text;
+                    chat_id = message.from.id;
                     if (text == "/stop") {
                         brk = "break";
                         console.log("/stop");
+                        sendMessage(chat_id, "*ЧАО*", "markdown");
                     }else if (text == "/zakupki") {
+
                         zakupki();
-                    }else console.log("non/stop");
+
+                    }else {
+                        console.log(text);
+                        sendMessage(chat_id, `*${text}*`, "markdown");
+                    }
                     // console.log(result[i]);
                 }
             }
@@ -85,26 +92,27 @@ function Bot() {
             new Promise((reso, reje) => {
                     setTimeout(() => {
                         reso("result");
-                    }, 3000);                
+                    }, 3000);
             }).then((res,rej) => {
-                if (res) {          
+                if (res) {
 
-                    if (brk != "break") {   
+                    if (brk != "break") {
                         Bot();
-                    }else {                        
+                        console.log("last update id: ", update_id);
+                    }else {
                         Get(getUpdates + (update_id + 1)).then((resolve, reject) => {
                             if (resolve) {
                                 console.log("exit");
                             }
                         });
-                    }                   
-                    console.log("update_id: ", update_id);
+                        // sendMessage(chat_id, `*${text}*`, "markdown");
+                    }
 
                 }else if (rej) {
                     console.log("rej");
                 }else {
                     console.log("else");
-                }            
+                }
             });
     
         }else if (reject) {
@@ -126,14 +134,10 @@ function zakupki() {
                 for (let i = 0;  i < result.rss.channel[0].item.length; i++) {
                     // let i = 0;
                     let title = result.rss.channel[0].item[i].title[0];
-                    let link = result.rss.channel[0].item[i].link[0];            
+                    let link = result.rss.channel[0].item[i].link[0];
                     let description = result.rss.channel[0].item[i].description[0];
                     let pubDate = result.rss.channel[0].item[i].pubDate[0];
                     let author = result.rss.channel[0].item[i].author[0];
-                                
-                    console.log('Автор заявки');
-                    console.log(author);
-                    // console.log();
 
                     let s = link.indexOf('=') + 1;
                     let num = link.slice(s);
@@ -146,27 +150,17 @@ function zakupki() {
                     start = name.indexOf('</strong>') + 9; // Наименование Заказчика (номер в строке) 
                     let end = name.indexOf('<strong>'); // номер символа в конце нужной строки
                     name = name.slice(start, end);
-                    console.log('Начальная цена контракта');
-                    console.log(name);
+                    // console.log('Начальная цена контракта');
+                    // console.log(name);
+                    // console.log();
+
+                    console.log('Ссылка');
+                    console.log(link);
                     console.log();
 
-                    // console.log('title');
-                    // console.log(title);
-                    // console.log();
+                    sendFormatMessage(description, link);
 
-                    // console.log('link');
-                    // console.log(link);
-                    // console.log();
-
-                    // console.log('description');
-                    // console.log(description);
-                    // console.log();
-
-                    // console.log('pubDate');
-                    // console.log(pubDate);
-                    // console.log();
-                }            
-                // console.log(result.rss.channel[0].item[0]);
+                }
             });
         }else if (reject) {
             console.log("reject");
@@ -176,4 +170,42 @@ function zakupki() {
     } )
     .catch(e => console.log("catch error: ", e));
 
+
+}
+
+
+
+function sendMessage(chat_id, text, parse_mode = '') {
+
+    let sendMess = `${uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}`;
+
+    // Get(sendMess).then(resolve => console.log(JSON.parse(resolve)));
+
+    Get(sendMess);
+
+}
+
+function sendFormatMessage(response, link) {
+    // let response = result.rss.channel[0].item[0].description[0];
+    // let link = result.rss.channel[0].item[0].link[0];
+
+    response = response.replace(/<br\/?>/g, "\n");
+    response = response.replace(/<\/?strong>/g, "*");
+    response = response.replace(/<\/?b>/g, "*");
+
+    let start = response.indexOf('<a href=');
+    let end = response.indexOf('>', start) + 1;
+    let target = response.indexOf('</a>');
+
+    let insert = response.slice(end, target);
+    insert = insert.replace(/\*/g, "");
+
+    let name = response.slice(0, start);
+
+    name += `[${insert}](${link})`;
+
+    name += response.slice(target);
+    response = name.replace(/<\/?a>/g, "");
+
+    sendMessage(chat_id, response, "markdown");
 }

@@ -1,16 +1,15 @@
 {
-  "name": "test",
+  "name": "geometrix_bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Telegram bot - parser sites",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index"
   },
-  "author": "",
+  "author": "Ogneyar",
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^2.6.1",
-    "telegraf": "^4.0.1",
     "xml2js": "^0.4.23"
   }
 }
