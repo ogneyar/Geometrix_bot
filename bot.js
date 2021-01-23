@@ -1,10 +1,10 @@
 const fs = require("fs");
 let fetch = require('node-fetch');
 let parseString = require('xml2js').parseString;
-
-// let express = require('express');
-// let	port = process.env.PORT || 80;
-// let	host = process.env.HOST || "0.0.0.0";
+const bodyParser = require("body-parser");
+let express = require('express');
+let	port = process.env.PORT || 80;
+let	host = process.env.HOST || "0.0.0.0";
 
 let BOT_TOKEN;
 try {
@@ -28,7 +28,26 @@ let brk = "null";
 const url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString=топографическая+съемка&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&selectedLaws=FZ44%2CFZ223&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0";
 
 
-Bot(update_id);
+// Bot(update_id);
+
+
+express().use(express.static('/'))
+    // создаем парсер для данных application/x-www-form-urlencoded
+    .use(bodyParser.urlencoded({ extended: false }))
+    // создаем парсер для данных application/json
+    .use(bodyParser.json())
+    .get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
+    .get('/bot', (req, res) => {
+        console.log(req.query);
+        res.send("req");
+    })
+    .post('/bot', (req, res) => {
+        if(!req.body) return res.sendStatus(400);
+        console.log(req.body);
+        res.send("req");
+    })
+    .get('*', (req, res) => res.sendFile(__dirname + '/index.html'))
+    .listen(port, host, () => console.log(`Server run, listen port ${ port }`));
 
 
 // -----------------------------------------

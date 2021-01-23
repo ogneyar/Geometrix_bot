@@ -2,13 +2,15 @@
   "name": "geometrix_bot",
   "version": "1.0.0",
   "description": "Telegram bot - parser sites",
-  "main": "index.js",
+  "main": "bot.js",
   "scripts": {
-    "start": "node index"
+    "start": "node bot"
   },
   "author": "Ogneyar",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
     "node-fetch": "^2.6.1",
     "xml2js": "^0.4.23"
   }
