@@ -19,7 +19,7 @@ let bot_token = BOT_TOKEN || process.env.BOT_TOKEN;
 let uri = `https://api.telegram.org/bot${bot_token}/`;
 let getMe = `${uri}getMe`;
 let getUpdates = `${uri}getUpdates?offset=`;
-const webhook = "https://a0500365.xsph.ru/bot";
+// const webhook = "https://a0500365.xsph.ru/bot";
 // const webhook = "https://geometrix61.herokuapp.com/bot";
 let update_id = 0;
 let from_id;
@@ -40,11 +40,11 @@ module.exports = class Bot {
             this.getWebhookInfo()
                 .then(resolve => {
                     if (resolve.result.url != "") {
-                        this.deleteWebhook().then(resolve => {
-                            if (resolve.ok) this.BotRun(update_id);
-                            else console.log("Error deleteWebhook");
-                        });
-                        // console.log(resolve.result.url);
+                        // this.deleteWebhook().then(resolve => {
+                        //     if (resolve.ok) this.BotRun(update_id);
+                        //     else console.log("Error deleteWebhook");
+                        // });
+                        console.log(resolve.result.url);
                     }else this.BotRun(update_id);
                 });
         
