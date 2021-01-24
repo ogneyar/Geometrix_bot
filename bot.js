@@ -14,9 +14,12 @@ try {
     console.error(err)
 }
 
+let development_mode = true;
+
 let uri = `https://api.telegram.org/bot${BOT_TOKEN}/`;
 let getMe = `${uri}getMe`;
 let getUpdates = `${uri}getUpdates?offset=`;
+const webhook = "https://a0500365.xsph.ru/bot";
 let update_id = 0;
 let chat_id;
 let text;
@@ -24,31 +27,48 @@ let update;
 let result;
 let message;
 let brk = "null";
-
 const url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString=топографическая+съемка&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&selectedLaws=FZ44%2CFZ223&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0";
 
 
-// Bot(update_id);
+if (development_mode) {
 
+    getWebhookInfo()
+        .then(resolve => {
+            if (resolve.result.url != "") {
+                deleteWebhook().then(resolve => {
+                    if (resolve.ok) Bot(update_id);
+                    else console.log("Error deleteWebhook");
+                });
+            }else Bot(update_id);
+        });
 
-express().use(express.static('/'))
-    // создаем парсер для данных application/x-www-form-urlencoded
-    .use(bodyParser.urlencoded({ extended: false }))
-    // создаем парсер для данных application/json
-    .use(bodyParser.json())
-    .get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
-    .get('/bot', (req, res) => {
-        console.log(req.query);
-        res.send("req");
-    })
-    .post('/bot', (req, res) => {
-        if(!req.body) return res.sendStatus(400);
-        console.log(req.body);
-        res.send("req");
-    })
-    .get('*', (req, res) => res.sendFile(__dirname + '/index.html'))
-    .listen(port, host, () => console.log(`Server run, listen port ${ port }`));
+}else {
 
+    getWebhookInfo()
+        .then(resolve => {
+            if (resolve.result.url == "") setWebhook(webhook);
+        });
+
+    express().use(express.static('/'))
+        // создаем парсер для данных application/x-www-form-urlencoded
+        .use(bodyParser.urlencoded({ extended: false }))
+        // создаем парсер для данных application/json
+        .use(bodyParser.json())
+        .get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
+        .get('/bot', (req, res) => {
+            console.log(req.query);
+            res.send("req");
+            // sendMessage(chat_id, "*ЧАО*", "markdown");
+        })
+        .post('/bot', (req, res) => {
+            if(!req.body) return res.sendStatus(400);
+            console.log(req.body);
+            res.send("req");
+        })
+        .get('*', (req, res) => res.sendFile(__dirname + '/index.html'))
+        .listen(port, host, () => console.log(`Server run, listen port ${ port }`));
+
+}
 
 // -----------------------------------------
 // -------------- ФУНКЦИИ ------------------
@@ -164,6 +184,11 @@ function zakupki() {
                     console.log(num);
                     // console.log();
 
+                    if (link.indexOf('https://zakupki.gov.ru') == -1) link = `https://zakupki.gov.ru${link}`
+                    console.log('Ссылка');
+                    console.log(link);
+                    console.log();
+
                     let start = description.indexOf('Начальная цена контракта'); // Начальная цена контракта (номер в строке)
                     let name = description.slice(start);
                     start = name.indexOf('</strong>') + 9; // Наименование Заказчика (номер в строке) 
@@ -173,9 +198,7 @@ function zakupki() {
                     // console.log(name);
                     // console.log();
 
-                    console.log('Ссылка');
-                    console.log(link);
-                    console.log();
+                    
 
                     sendFormatMessage(description, link);
 
@@ -192,16 +215,25 @@ function zakupki() {
 
 }
 
+function call(url) {
+    return Get(url)
+        .then(resolve => JSON.parse(resolve) );
+}
 
+function getWebhookInfo() {
+    return call(`${uri}getWebhookInfo`);
+}
 
-function sendMessage(chat_id, text, parse_mode = '') {
+function setWebhook(url) {
+    return call(`${uri}setWebhook?url=${url}`);
+}
 
-    let sendMess = `${uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}`;
+function deleteWebhook() {
+    return call(`${uri}deleteWebhook`);
+}
 
-    // Get(sendMess).then(resolve => console.log(JSON.parse(resolve)));
-
-    Get(sendMess);
-
+function sendMessage(chat_id, text, parse_mode = '') { 
+    return call(`${uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}`);
 }
 
 function sendFormatMessage(response, link) {
