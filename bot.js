@@ -13,22 +13,22 @@ try {
 } catch (err) {
     console.error(err)
 }
-
+let bot_token = BOT_TOKEN || process.env.BOT_TOKEN;
 // let development_mode = true;
 
-let uri = `https://api.telegram.org/bot${BOT_TOKEN}/`;
+let uri = `https://api.telegram.org/bot${bot_token}/`;
 let getMe = `${uri}getMe`;
 let getUpdates = `${uri}getUpdates?offset=`;
 const webhook = "https://a0500365.xsph.ru/bot";
 // const webhook = "https://geometrix61.herokuapp.com/bot";
 let update_id = 0;
-let chat_id;
+let from_id;
 let text;
 let update;
 let result;
 let message;
 let brk = "null";
-const url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString=топографическая+съемка&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&selectedLaws=FZ44%2CFZ223&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0";
+
 
 
 module.exports = class Bot {
@@ -44,6 +44,7 @@ module.exports = class Bot {
                             if (resolve.ok) this.BotRun(update_id);
                             else console.log("Error deleteWebhook");
                         });
+                        // console.log(resolve.result.url);
                     }else this.BotRun(update_id);
                 });
         
@@ -52,6 +53,7 @@ module.exports = class Bot {
             this.getWebhookInfo()
                 .then(resolve => {
                     if (resolve.result.url == "" || (resolve.result.url != "" && resolve.result.url != webhookNew)) this.setWebhook(webhookNew);
+                    console.log(resolve.result.url);
                 });
         
             // express().use(express.static('/'))
@@ -63,7 +65,7 @@ module.exports = class Bot {
             //     .get('/bot', (req, res) => {
             //         console.log(req.query);
             //         res.send("req");
-            //         // sendMessage(chat_id, "*ЧАО*", "markdown");
+            //         // sendMessage(from_id, "*ЧАО*", "markdown");
             //     })
             //     .post('/bot', (req, res) => {
             //         if(!req.body) return res.sendStatus(400);
@@ -75,6 +77,8 @@ module.exports = class Bot {
 
         }
 
+        this.url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString=топографическая+съемка&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&selectedLaws=FZ44%2CFZ223&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0";
+
     }
 
 
@@ -83,6 +87,9 @@ module.exports = class Bot {
             .then(resolve => JSON.parse(resolve) );
     }
 
+    // close() {
+    //     return this.call(`${uri}close`);
+    // }
 
     getWebhookInfo() {
         return this.call(`${uri}getWebhookInfo`);
@@ -96,8 +103,9 @@ module.exports = class Bot {
         return this.call(`${uri}deleteWebhook`);
     }
 
-    sendMessage(chat_id, text, parse_mode = '') { 
-        return this.call(`${uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}`);
+    sendMessage(chat_id, text, parse_mode = '', ReplyKeyboardMarkup = '') {
+        if (ReplyKeyboardMarkup) ReplyKeyboardMarkup = JSON.stringify(ReplyKeyboardMarkup);
+        return this.call(`${uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}&reply_markup=${ReplyKeyboardMarkup}`);
     }
 
 
@@ -130,20 +138,36 @@ module.exports = class Bot {
                         update_id = result[i].update_id;
                         message = result[i].message;
                         text = message.text;
-                        chat_id = message.from.id;
-                        if (text == "/stop") {
-                            brk = "break";
-                            console.log("/stop");
-                            this.sendMessage(chat_id, "*ЧАО*", "markdown");
-                        }else if (text == "/zakupki") {
+                        from_id = message.from.id;
 
-                            this.zakupki(url);
+                        // if (text == "/stop") {
+                        //     brk = "break";
+                        //     console.log("/stop");
+                        //     this.sendMessage(from_id, "*ЧАО*", "markdown");
+                        // }else 
+                        let ReplyKeyboardMarkup = {
+                            'keyboard':[
+                                [
+                                    {'text':'Показать закупки'}
+                                ]
+                            ],
+                            'resize_keyboard':true
+                        }
+
+                        if (text == "/start") {
+                            this.sendMessage(from_id, "Приветствую!\n\nНажми кнопку ниже или пришли команду /zakupki", "markdown", ReplyKeyboardMarkup);
+                        }else if (text == "/zakupki" || text == "Показать закупки") {
+
+                            this.zakupki();
 
                         }else {
                             console.log(text);
-                            this.sendMessage(chat_id, `*${text}*`, "markdown");
+                            this.sendMessage(from_id, `*Не понимаю(*`, "markdown");
                         }
+
                         // console.log(result[i]);
+
+
                     }
                 }
                 // async_func().then((res,rej) => {
@@ -163,7 +187,7 @@ module.exports = class Bot {
                                     console.log("exit");
                                 }
                             });
-                            // sendMessage(chat_id, `*${text}*`, "markdown");
+                            // sendMessage(from_id, `*${text}*`, "markdown");
                         }
 
                     }else if (rej) {
@@ -182,39 +206,14 @@ module.exports = class Bot {
         .catch(e => console.log("catch error: ", e));
     }
 
-    sendFormatMessage(response, link) {
-        // let response = result.rss.channel[0].item[0].description[0];
-        // let link = result.rss.channel[0].item[0].link[0];
-
-        response = response.replace(/<br\/?>/g, "\n");
-        response = response.replace(/<\/?strong>/g, "*");
-        response = response.replace(/<\/?b>/g, "*");
-
-        let start = response.indexOf('<a href=');
-        let end = response.indexOf('>', start) + 1;
-        let target = response.indexOf('</a>');
-
-        let insert = response.slice(end, target);
-        insert = insert.replace(/\*/g, "");
-
-        let name = response.slice(0, start);
-
-        name += `[${insert}](${link})`;
-
-        name += response.slice(target);
-        response = name.replace(/<\/?a>/g, "");
-
-        this.sendMessage(chat_id, response, "markdown");
-    }
-
 
     // метод для работы с гос.закупками
-    zakupki(url) {
+    zakupki(url = this.url) {
 
         this.Get(url).then((resolve, reject) => {
             if (resolve) {
                 // console.log(resolve);
-                parseString(resolve, function (err, result) {
+                parseString(resolve, (err, result) => {
                     for (let i = 0;  i < result.rss.channel[0].item.length; i++) {
                         // let i = 0;
                         let title = result.rss.channel[0].item[i].title[0];
@@ -243,7 +242,9 @@ module.exports = class Bot {
                         // console.log(name);
                         // console.log();
                         
-                        this.sendFormatMessage(description, link);
+                        // this.sendFormatMessage(description, link);
+                        let response = formatMessage(description, link);
+                        this.sendMessage(from_id, response, "markdown");
                         
                     }
                 });
@@ -252,9 +253,34 @@ module.exports = class Bot {
             }else {
                 console.log("else");
             }
-        } )
+        } )        
         .catch(e => console.log("catch error: ", e));
     }
 
-
 }
+
+
+
+function formatMessage(response, link) {
+    
+        response = response.replace(/<br\/?>/g, "\n");
+        response = response.replace(/<\/?strong>/g, "*");
+        response = response.replace(/<\/?b>/g, "*");
+    
+        let start = response.indexOf('<a href=');
+        let end = response.indexOf('>', start) + 1;
+        let target = response.indexOf('</a>');
+    
+        let insert = response.slice(end, target);
+        insert = insert.replace(/\*/g, "");
+    
+        let name = response.slice(0, start);
+    
+        name += `[${insert}](${link})`;
+    
+        name += response.slice(target);
+        response = name.replace(/<\/?a>/g, "");
+    
+        // this.sendMessage(from_id, response, "markdown");
+        return response;
+    }

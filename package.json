@@ -1,6 +1,6 @@
 {
   "name": "geometrix_bot",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Telegram bot - parser sites",
   "main": "bot.js",
   "scripts": {
