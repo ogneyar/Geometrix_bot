@@ -1,10 +1,6 @@
 const fs = require("fs");
 let fetch = require('node-fetch');
 let parseString = require('xml2js').parseString;
-// const bodyParser = require("body-parser");
-// let express = require('express');
-// let	port = process.env.PORT || 80;
-// let	host = process.env.HOST || "0.0.0.0";
 
 let BOT_TOKEN;
 try {
@@ -14,7 +10,6 @@ try {
     console.error(err)
 }
 let bot_token = BOT_TOKEN || process.env.BOT_TOKEN;
-// let development_mode = true;
 
 let uri = `https://api.telegram.org/bot${bot_token}/`;
 let getMe = `${uri}getMe`;
@@ -29,6 +24,7 @@ let result;
 let message;
 let brk = "null";
 
+let url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString=топографическая+съемка&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&selectedLaws=FZ44%2CFZ223&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0";
 
 
 module.exports = class Bot {
@@ -55,29 +51,8 @@ module.exports = class Bot {
                     if (resolve.result.url == "" || (resolve.result.url != "" && resolve.result.url != webhookNew)) this.setWebhook(webhookNew);
                     console.log(resolve.result.url);
                 });
-        
-            // express().use(express.static('/'))
-            //     // создаем парсер для данных application/x-www-form-urlencoded
-            //     .use(bodyParser.urlencoded({ extended: false }))
-            //     // создаем парсер для данных application/json
-            //     .use(bodyParser.json())
-            //     // .get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
-            //     .get('/bot', (req, res) => {
-            //         console.log(req.query);
-            //         res.send("req");
-            //         // sendMessage(from_id, "*ЧАО*", "markdown");
-            //     })
-            //     .post('/bot', (req, res) => {
-            //         if(!req.body) return res.sendStatus(400);
-            //         console.log(req.body);
-            //         res.send("req");
-            //     })
-            //     // .get('*', (req, res) => res.sendFile(__dirname + '/index.html'))
-            //     .listen(port, host, () => console.log(`Server run, listen port ${ port }`));
 
         }
-
-        this.url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString=топографическая+съемка&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&selectedLaws=FZ44%2CFZ223&currencyIdGeneral=-1&OrderPlacementSmallBusinessSubject=on&OrderPlacementRnpData=on&OrderPlacementExecutionRequirement=on&orderPlacement94_0=0&orderPlacement94_1=0&orderPlacement94_2=0";
 
     }
 
@@ -140,11 +115,6 @@ module.exports = class Bot {
                         text = message.text;
                         from_id = message.from.id;
 
-                        // if (text == "/stop") {
-                        //     brk = "break";
-                        //     console.log("/stop");
-                        //     this.sendMessage(from_id, "*ЧАО*", "markdown");
-                        // }else 
                         let ReplyKeyboardMarkup = {
                             'keyboard':[
                                 [
@@ -158,7 +128,7 @@ module.exports = class Bot {
                             this.sendMessage(from_id, "Приветствую!\n\nНажми кнопку ниже или пришли команду /zakupki", "markdown", ReplyKeyboardMarkup);
                         }else if (text == "/zakupki" || text == "Показать закупки") {
 
-                            this.zakupki();
+                            this.zakupki(from_id); 
 
                         }else {
                             console.log(text);
@@ -166,7 +136,6 @@ module.exports = class Bot {
                         }
 
                         // console.log(result[i]);
-
 
                     }
                 }
@@ -208,42 +177,33 @@ module.exports = class Bot {
 
 
     // метод для работы с гос.закупками
-    zakupki(url = this.url) {
+    zakupki(from_id) {
 
         this.Get(url).then((resolve, reject) => {
             if (resolve) {
                 // console.log(resolve);
+
+                let title, link, description, pubDate, author, s, num, response;
+
                 parseString(resolve, (err, result) => {
                     for (let i = 0;  i < result.rss.channel[0].item.length; i++) {
                         // let i = 0;
-                        let title = result.rss.channel[0].item[i].title[0];
-                        let link = result.rss.channel[0].item[i].link[0];
-                        let description = result.rss.channel[0].item[i].description[0];
-                        let pubDate = result.rss.channel[0].item[i].pubDate[0];
-                        let author = result.rss.channel[0].item[i].author[0];
+                        title = result.rss.channel[0].item[i].title[0];
+                        link = result.rss.channel[0].item[i].link[0];
+                        description = result.rss.channel[0].item[i].description[0];
+                        pubDate = result.rss.channel[0].item[i].pubDate[0];
+                        author = result.rss.channel[0].item[i].author[0];
 
-                        let s = link.indexOf('=') + 1;
-                        let num = link.slice(s);
+                        s = link.indexOf('=') + 1;
+                        num = link.slice(s);
                         console.log('Номер заявки');
                         console.log(num);
-                        // console.log();
-
-                        if (link.indexOf('https://zakupki.gov.ru') == -1) link = `https://zakupki.gov.ru${link}`
-                        console.log('Ссылка');
-                        console.log(link);
                         console.log();
 
-                        let start = description.indexOf('Начальная цена контракта'); // Начальная цена контракта (номер в строке)
-                        let name = description.slice(start);
-                        start = name.indexOf('</strong>') + 9; // Наименование Заказчика (номер в строке) 
-                        let end = name.indexOf('<strong>'); // номер символа в конце нужной строки
-                        name = name.slice(start, end);
-                        // console.log('Начальная цена контракта');
-                        // console.log(name);
-                        // console.log();
-                        
-                        // this.sendFormatMessage(description, link);
-                        let response = formatMessage(description, link);
+                        if (link.indexOf('https://zakupki.gov.ru') == -1) 
+                            link = `https://zakupki.gov.ru${link}`;                                               
+
+                        response = formatMessage(description, link);
                         this.sendMessage(from_id, response, "markdown");
                         
                     }
@@ -281,6 +241,5 @@ function formatMessage(response, link) {
         name += response.slice(target);
         response = name.replace(/<\/?a>/g, "");
     
-        // this.sendMessage(from_id, response, "markdown");
         return response;
     }
