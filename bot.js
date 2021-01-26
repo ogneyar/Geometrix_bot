@@ -10,10 +10,6 @@ try {
     console.error(err)
 }
 let bot_token = BOT_TOKEN || process.env.BOT_TOKEN;
-
-let uri = `https://api.telegram.org/bot${bot_token}/`;
-let getMe = `${uri}getMe`;
-let getUpdates = `${uri}getUpdates?offset=`;
 // const webhook = "https://a0500365.xsph.ru/bot";
 // const webhook = "https://geometrix61.herokuapp.com/bot";
 let update_id = 0;
@@ -28,19 +24,25 @@ let url = "https://zakupki.gov.ru/epz/order/extendedsearch/rss.html?searchString
 
 
 module.exports = class Bot {
+    
+    
+    constructor(bot_tokenNew = bot_token, webhookNew = "null") {
 
-    constructor(webhookNew = "null") {
+        
+        this.uri = `https://api.telegram.org/bot${bot_tokenNew}/`;
+        this.getMe = `${this.uri}getMe`;
+        this.getUpdates = `${this.uri}getUpdates?offset=`;
 
         if (webhookNew == "null") {
 
             this.getWebhookInfo()
                 .then(resolve => {
                     if (resolve.result.url != "") {
-                        // this.deleteWebhook().then(resolve => {
-                        //     if (resolve.ok) this.BotRun(update_id);
-                        //     else console.log("Error deleteWebhook");
-                        // });
-                        console.log(resolve.result.url);
+                        this.deleteWebhook().then(resolve => {
+                            if (resolve.ok) this.BotRun(update_id);
+                            else console.log("Error deleteWebhook");
+                        });
+                        // console.log(resolve.result.url);
                     }else this.BotRun(update_id);
                 });
         
@@ -63,24 +65,24 @@ module.exports = class Bot {
     }
 
     // close() {
-    //     return this.call(`${uri}close`);
+    //     return this.call(`${this.uri}close`);
     // }
 
     getWebhookInfo() {
-        return this.call(`${uri}getWebhookInfo`);
+        return this.call(`${this.uri}getWebhookInfo`);
     }
 
     setWebhook(url) {
-        return this.call(`${uri}setWebhook?url=${url}`);
+        return this.call(`${this.uri}setWebhook?url=${url}`);
     }
 
     deleteWebhook() {
-        return this.call(`${uri}deleteWebhook`);
+        return this.call(`${this.uri}deleteWebhook`);
     }
 
     sendMessage(chat_id, text, parse_mode = '', ReplyKeyboardMarkup = '') {
         if (ReplyKeyboardMarkup) ReplyKeyboardMarkup = JSON.stringify(ReplyKeyboardMarkup);
-        return this.call(`${uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}&reply_markup=${ReplyKeyboardMarkup}`);
+        return this.call(`${this.uri}sendMessage?chat_id=${chat_id}&text=${text}&parse_mode=${parse_mode}&reply_markup=${ReplyKeyboardMarkup}`);
     }
 
 
@@ -98,7 +100,7 @@ module.exports = class Bot {
 
 
     BotRun() {
-        let request = getUpdates + (update_id + 1);
+        let request = this.getUpdates + (update_id + 1);
         // console.log(request);
         this.Get(request).then((resolve, reject) => {
             if (resolve) {
@@ -151,7 +153,7 @@ module.exports = class Bot {
                             this.BotRun();
                             console.log("last update id: ", update_id);
                         }else {
-                            this.Get(getUpdates + (update_id + 1)).then((resolve, reject) => {
+                            this.Get(this.getUpdates + (update_id + 1)).then((resolve, reject) => {
                                 if (resolve) {
                                     console.log("exit");
                                 }
